@@ -4,9 +4,12 @@ mod bindings {
 }
 
 use bindings::*;
+use postgres::{Client, NoTls};
 
 fn main() {
     let mut error;
+    let mut client =
+        Client::connect("host=192.168.2.2 user=postgres password=measurement", NoTls).unwrap();
 
     unsafe {
         sensirion_i2c_hal_init();
@@ -37,6 +40,12 @@ fn main() {
         } else if co2 == 0 {
             println!("Invalid sample detected, skipping.");
         } else {
+            let res = client.execute("INSERT INTO measurements (time, ppm, temperature, humidity) VALUES (CURRENT_TIMESTAMP, $1, $2, $3)", &[&(co2 as i32), &temperature, &humidity]);
+            if let Err(e) = res {
+                eprintln!("Failed to insert into database {e:?}");
+            } else {
+                println!("Measurement added to the database successfully.");
+            }
             println!("CO2: {co2} ppm");
             println!("Temperature: {temperature:.2} °C");
             println!("Humidity: {humidity:.2} RH");
