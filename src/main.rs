@@ -27,16 +27,7 @@ fn main() {
 
     loop {
         // Read Measurement if data is available
-        let mut data_ready_flag = 0;
-        unsafe { sensirion_i2c_hal_sleep_usec(100000) };
-        error = unsafe { scd4x_get_data_ready_status(&mut data_ready_flag) };
-        if error != 0 {
-            println!("Error executing scd4x_get_data_ready_flag(): {error}");
-            continue;
-        }
-        if data_ready_flag == 0 {
-            continue;
-        }
+        unsafe { sensirion_i2c_hal_sleep_usec(5000000) };
         let mut co2 = 0;
         let mut temperature = 0.0;
         let mut humidity = 0.0;
