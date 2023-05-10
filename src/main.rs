@@ -8,8 +8,11 @@ use postgres::{Client, NoTls};
 
 fn main() {
     let mut error;
-    let mut client =
-        Client::connect("host=192.168.2.2 user=postgres password=measurement dbname=air_quality", NoTls).unwrap();
+    let mut client = Client::connect(
+        "host=192.168.2.2 user=postgres password=measurement dbname=air_quality",
+        NoTls,
+    )
+    .unwrap();
 
     unsafe {
         sensirion_i2c_hal_init();
