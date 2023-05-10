@@ -4,9 +4,12 @@ mod bindings {
 }
 
 use bindings::*;
+use postgres::{Client, NoTls};
 
 fn main() {
     let mut error;
+    let mut client =
+        Client::connect("host=192.168.2.2 user=postgres password=measurement dbname=air_quality", NoTls).unwrap();
 
     unsafe {
         sensirion_i2c_hal_init();
@@ -27,16 +30,7 @@ fn main() {
 
     loop {
         // Read Measurement if data is available
-        let mut data_ready_flag = 0;
-        unsafe { sensirion_i2c_hal_sleep_usec(100000) };
-        error = unsafe { scd4x_get_data_ready_status(&mut data_ready_flag) };
-        if error != 0 {
-            println!("Error executing scd4x_get_data_ready_flag(): {error}");
-            continue;
-        }
-        if data_ready_flag == 0 {
-            continue;
-        }
+        unsafe { sensirion_i2c_hal_sleep_usec(5000000) };
         let mut co2 = 0;
         let mut temperature = 0.0;
         let mut humidity = 0.0;
@@ -46,6 +40,12 @@ fn main() {
         } else if co2 == 0 {
             println!("Invalid sample detected, skipping.");
         } else {
+            let res = client.execute("INSERT INTO measurements (time, ppm, temperature, humidity) VALUES (CURRENT_TIMESTAMP, $1, $2, $3)", &[&(co2 as i32), &temperature, &humidity]);
+            if let Err(e) = res {
+                eprintln!("Failed to insert into database {e:?}");
+            } else {
+                println!("Measurement added to the database successfully.");
+            }
             println!("CO2: {co2} ppm");
             println!("Temperature: {temperature:.2} °C");
             println!("Humidity: {humidity:.2} RH");
